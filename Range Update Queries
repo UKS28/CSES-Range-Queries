@@ -1,0 +1,121 @@
+#include <bits/stdc++.h>
+using namespace std;
+#define ll long long
+#define rep(st, k) for (long long i = st; i < k; i++)
+
+class sgTree
+{
+public:
+  vector<ll> Tree, Lazy;
+  sgTree(int n)
+  {
+    Tree.resize(4 * n + 1);
+    Lazy.resize(4 * n + 1);
+  }
+  void build(int si, int ss, int se, vector<ll> &arr)
+  {
+    if (ss == se)
+    {
+      Tree[si] = arr[ss];
+      return;
+    }
+    int mid = ss + (se - ss) / 2;
+    build(2 * si + 1, ss, mid, arr);
+    build(2 * si + 2, mid + 1, se, arr);
+  }
+
+  void update(int si, int ss, int se, int l, int r, int val)
+  {
+    // 1.IF ANY LAZY THEN UPDATE AND PROPAGATE THE UPDATE IN THE ITS CHILD
+    // 2.IF OUT SIDE THE RANGE THEN RETURN
+    // 3.IF INSIDE THE RANGE --> THEN UPDATE THE LAZY TREE AND UPDATE THE ACTUAL TREE.
+    if (Lazy[si] != 0)
+    {
+      Tree[si] += (se - ss + 1) * Lazy[si];
+      if (ss != se)
+      {
+        Lazy[2 * si + 1] += Lazy[si];
+        Lazy[2 * si + 2] += Lazy[si];
+      }
+      Lazy[si] = 0;
+    }
+
+    if (l > se || r < ss)
+      return;
+    if (ss >= l && se <= r)
+    {
+      Tree[si] += (se - ss + 1) * val;
+      if (ss != se)
+      {
+        Lazy[2 * si + 1] += val;
+        Lazy[2 * si + 2] += val;
+      }
+      return;
+    }
+
+    int mid = ss + (se - ss) / 2;
+    update(2 * si + 1, ss, mid, l, r, val);
+    update(2 * si + 2, mid + 1, se, l, r, val);
+  }
+
+  ll query(int si, int ss, int se, int pos)
+  {
+    // 1.IF ANY LAZY THEN UPDATE THE ACTUAL TREE AND PROPAGATE THE UPDATE IN THE ITS LAZY CHILD
+    // 2.BASE CASE FOR FINDING ANSWER
+    // 3.REACHING THE ACTUAL INDEX THROUGH MID
+    if (Lazy[si] != 0)
+    {
+      Tree[si] += (Lazy[si] * (se - ss + 1));
+      if (ss != se)
+      {
+        Lazy[2 * si + 1] += Lazy[si];
+        Lazy[2 * si + 2] += Lazy[si];
+      }
+      Lazy[si] = 0;
+      // cout<<"inside lazy\n";
+    }
+
+    if (ss == se && ss == pos)
+      return Tree[si];
+
+    int mid = ss + (se - ss) / 2;
+    if (mid >= pos)
+      return query(2 * si + 1, ss, mid, pos);
+    else
+      return query(2 * si + 2, mid + 1, se, pos);
+  }
+};
+
+int main()
+{
+  ll n, m;
+  cin >> n >> m;
+  vector<ll> v(n);
+  rep(0, n)
+  {
+    cin >> v[i];
+  }
+  sgTree st(n);
+  st.build(0, 0, n - 1, v);
+
+  while (m--)
+  {
+    int type;
+    cin >> type;
+    if (type == 2)
+    {
+      int pos;
+      cin >> pos;
+      pos--;
+      cout << st.query(0, 0, n - 1, pos) << endl;
+    }
+    else
+    {
+      int a, b, u;
+      cin >> a >> b >> u;
+      a--;
+      b--;
+      st.update(0, 0, n - 1, a, b, u);
+    }
+  }
+}
